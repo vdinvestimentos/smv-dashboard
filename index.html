@@ -83,16 +83,16 @@
                 <!-- Earnings & Remaining Quick Stat -->
                 <div class="flex flex-wrap items-center gap-x-8 lg:gap-x-12">
                     <div class="text-center lg:text-left">
-                        <div class="text-xs uppercase tracking-widest text-zinc-500 mb-1">Next Earnings</div>
-                        <div id="earnings-date" class="font-semibold text-xl md:text-2xl text-amber-400">Loading...</div>
-                    </div>
-
-                    <div class="hidden md:block h-10 w-px bg-white/10"></div>
-                    <div class="text-center lg:text-left">
                         <div class="text-xs uppercase tracking-widest text-zinc-500 mb-1">Market Cap</div>
                         <div id="market-cap" class="font-semibold text-xl md:text-2xl text-white-400">Loading...</div>
                     </div>
 
+                    <div class="hidden md:block h-10 w-px bg-white/10"></div>
+
+                    <div class="text-center lg:text-left">
+                        <div class="text-xs uppercase tracking-widest text-zinc-500 mb-1">Next Earnings</div>
+                        <div id="earnings-date" class="font-semibold text-xl md:text-2xl text-amber-400">Loading...</div>
+                    </div>
                 </div>
 
                 <!-- Action Buttons -->
@@ -322,13 +322,10 @@
                 
                 // Highlighted Market Cap
                 document.getElementById('market-cap').innerHTML = `
-                    Market Cap • <span class="font-bold text-2xl md:text-3xl text-white-400">${valueMap[DASHBOARD_STRUCTURE.header.marketCap] || '—'}</span>
+                    <span class="font-bold text-2xl md:text-3xl text-white-400">${valueMap[DASHBOARD_STRUCTURE.header.marketCap] || '—'}</span>
                 `;
                 
                 document.getElementById('earnings-date').textContent = valueMap[DASHBOARD_STRUCTURE.header.earnings] || '—';
-
-                // ROE only
-                document.getElementById('roe').textContent = valueMap["Return on Equity (ROE)"] || '—';
 
                 // Render sections
                 renderMetrics('growth-metrics', DASHBOARD_STRUCTURE.growth, valueMap);
