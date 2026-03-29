@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TSLA • Stock Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600&amp;display=swap');
+        
+        :root {
+            --tw-color-primary: #00ff9f;
+        }
+        
+        body {
+            font-family: 'Inter', system_ui, sans-serif;
+        }
+        
+        .header-font {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+        
+        .dashboard-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .dashboard-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+        }
+        
+        .metric-value {
+            font-variant-numeric: tabular-nums;
+        }
+        
+        .section-header {
+            position: relative;
+        }
+        
+        .section-header::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 48px;
+            height: 3px;
+            background: linear-gradient(to right, #00ff9f, #00cc7a);
+            border-radius: 9999px;
+        }
+        
+        .value-positive {
+            color: #00ff9f;
+        }
+        
+        .value-negative {
+            color: #ff3b5c;
+        }
+        
+        .loader {
+            animation: spin 1.5s linear infinite;
+        }
+    </style>
+</head>
+<body class="bg-zinc-950 text-white min-h-screen">
+    <!-- HEADER -->
+    <div class="border-b border-white/10 bg-zinc-900 sticky top-0 z-50">
+        <div class="max-w-screen-2xl mx-auto px-8 py-6 flex items-center justify-between">
+            
+            <!-- Ticker + Name -->
+            <div class="flex items-center gap-x-6">
+                <div class="flex items-center justify-center w-14 h-14 bg-gradient-to-br from-emerald-400 to-cyan-400 rounded-2xl text-4xl font-bold shadow-inner">🚀</div>
+                <div>
+                    <div class="flex items-baseline gap-x-3">
+                        <span id="ticker" class="header-font text-5xl font-semibold tracking-tighter">TSLA</span>
+                        <span id="company-name" class="text-2xl text-zinc-400">Loading...</span>
+                    </div>
+                    <div class="flex items-center gap-x-2 text-sm text-zinc-500">
+                        <span id="market-cap" class="font-medium">Market Cap • Loading...</span>
+                        <span class="text-emerald-400 text-xs px-2.5 py-0.5 bg-emerald-400/10 rounded-full font-medium flex items-center gap-x-1">
+                            <i class="fa-solid fa-circle-check"></i>
+                            LIVE
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Earnings & Quick Stats -->
+            <div class="flex items-center gap-x-8">
+                <div class="text-center">
+                    <div class="text-xs uppercase tracking-widest text-zinc-500 mb-1">Next Earnings</div>
+                    <div id="earnings-date" class="font-semibold text-2xl text-amber-400">Loading...</div>
+                </div>
+                
+                <div class="h-12 w-px bg-white/10"></div>
+                
+                <!-- Key Ratios -->
+                <div class="flex items-center gap-x-6 text-sm">
+                    <div>
+                        <div class="text-zinc-400 text-xs">EPS Yield</div>
+                        <div id="eps-yield" class="font-semibold text-xl">—</div>
+                    </div>
+                    <div>
+                        <div class="text-zinc-400 text-xs">FCF Yield</div>
+                        <div id="fcf-yield" class="font-semibold text-xl">—</div>
+                    </div>
+                    <div>
+                        <div class="text-zinc-400 text-xs">ROE</div>
+                        <div id="roe" class="font-semibold text-xl">—</div>
+                    </div>
+                    <div>
+                        <div class="text-zinc-400 text-xs">Beta</div>
+                        <div id="beta" class="font-semibold text-xl">—</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right side actions -->
+            <div class="flex items-center gap-x-4">
+                <button onclick="refreshDashboard()" 
+                        class="flex items-center gap-x-2 px-5 py-3 bg-white/10 hover:bg-white/20 rounded-3xl text-sm font-medium transition-colors">
+                    <i class="fa-solid fa-rotate"></i>
+                    <span>Refresh CSV</span>
+                </button>
+                <a href="https://docs.google.com/spreadsheets/d/e/2PACX-1vQrFxPt40nqUM0HS66Q0zsQp6cZbXva4MZKI3pnz71MBcEITesBSPHrz8mWJmeUxrHsHCf1K3fAQfXQ/pub?output=csv" 
+                   target="_blank"
+                   class="flex items-center gap-x-2 px-5 py-3 bg-emerald-400 hover:bg-emerald-500 text-zinc-950 rounded-3xl text-sm font-semibold transition-colors">
+                    <i class="fa-solid fa-file-csv"></i>
+                    <span>View Source CSV</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-screen-2xl mx-auto px-8 py-8">
+        
+        <!-- LOADING / STATUS -->
+        <div id="status-bar" class="mb-8 flex items-center justify-center bg-emerald-400/10 text-emerald-400 text-sm font-medium px-6 py-3 rounded-3xl border border-emerald-400/20">
+            <i id="status-icon" class="fa-solid fa-spinner loader mr-2"></i>
+            <span id="status-text">Fetching latest data from Google Spreadsheet...</span>
+        </div>
+
+        <div id="main-content" class="grid grid-cols-1 lg:grid-cols-3 gap-8 hidden">
+            
+            <!-- GROWTH SECTION -->
+            <div class="dashboard-card bg-zinc-900 rounded-3xl p-8 border border-white/5">
+                <div class="section-header flex items-center gap-x-3 mb-6">
+                    <i class="fa-solid fa-chart-line text-2xl text-emerald-400"></i>
+                    <h2 class="text-2xl font-semibold">Growth</h2>
+                </div>
+                <div id="growth-metrics" class="space-y-5"></div>
+            </div>
+
+            <!-- QUALITY SECTION -->
+            <div class="dashboard-card bg-zinc-900 rounded-3xl p-8 border border-white/5">
+                <div class="section-header flex items-center gap-x-3 mb-6">
+                    <i class="fa-solid fa-diamond text-2xl text-cyan-400"></i>
+                    <h2 class="text-2xl font-semibold">Quality</h2>
+                </div>
+                <div id="quality-metrics" class="space-y-5"></div>
+            </div>
+
+            <!-- VALUATION SECTION -->
+            <div class="dashboard-card bg-zinc-900 rounded-3xl p-8 border border-white/5">
+                <div class="section-header flex items-center gap-x-3 mb-6">
+                    <i class="fa-solid fa-scale-balanced text-2xl text-amber-400"></i>
+                    <h2 class="text-2xl font-semibold">Valuation</h2>
+                </div>
+                <div id="valuation-metrics" class="space-y-5"></div>
+            </div>
+
+            <!-- MOMENTUM SECTION -->
+            <div class="dashboard-card bg-zinc-900 rounded-3xl p-8 border border-white/5">
+                <div class="section-header flex items-center gap-x-3 mb-6">
+                    <i class="fa-solid fa-rocket text-2xl text-violet-400"></i>
+                    <h2 class="text-2xl font-semibold">Momentum</h2>
+                </div>
+                <div id="momentum-metrics" class="space-y-5"></div>
+            </div>
+
+            <!-- INCOME SECTION -->
+            <div class="dashboard-card bg-zinc-900 rounded-3xl p-8 border border-white/5">
+                <div class="section-header flex items-center gap-x-3 mb-6">
+                    <i class="fa-solid fa-dollar-sign text-2xl text-lime-400"></i>
+                    <h2 class="text-2xl font-semibold">Income</h2>
+                </div>
+                <div id="income-metrics" class="space-y-5"></div>
+            </div>
+
+            <!-- BALANCE SHEET SECTION -->
+            <div class="dashboard-card bg-zinc-900 rounded-3xl p-8 border border-white/5">
+                <div class="section-header flex items-center gap-x-3 mb-6">
+                    <i class="fa-solid fa-landmark text-2xl text-sky-400"></i>
+                    <h2 class="text-2xl font-semibold">Balance Sheet</h2>
+                </div>
+                <div id="balance-metrics" class="space-y-5"></div>
+            </div>
+        </div>
+
+        <!-- ERROR MESSAGE -->
+        <div id="error-message" class="hidden mb-8 p-8 bg-red-400/10 border border-red-400/30 rounded-3xl text-red-400 text-center">
+            <i class="fa-solid fa-triangle-exclamation text-3xl mb-4 block"></i>
+            <p class="font-medium">Could not load data from the Google Spreadsheet.</p>
+            <p id="error-detail" class="text-sm mt-2"></p>
+            <button onclick="refreshDashboard()" class="mt-6 px-6 py-3 bg-red-400 text-white rounded-3xl text-sm font-medium">Try Again</button>
+        </div>
+
+        <!-- FOOTER / SOURCE -->
+        <div class="mt-12 text-center text-zinc-500 text-xs flex items-center justify-center gap-x-8">
+            <div class="flex items-center gap-x-2">
+                <i class="fa-solid fa-file-csv"></i>
+                <span>Data retrieved live from Google Spreadsheet</span>
+            </div>
+            <div>•</div>
+            <div id="last-updated">Last updated: just now</div>
+            <div>•</div>
+            <button onclick="copyHTML()" 
+                    class="flex items-center gap-x-1 hover:text-white transition-colors">
+                <i class="fa-solid fa-copy"></i>
+                <span>Copy this HTML file</span>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // =============================================
+        // CONFIGURATION - CSV URL & Dashboard Structure
+        // =============================================
+        //const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQrFxPt40nqUM0HS66Q0zsQp6cZbXva4MZKI3pnz71MBcEITesBSPHrz8mWJmeUxrHsHCf1K3fAQfXQ/pub?output=csv";
+        //const CSV_URL = "https://api.allorigins.win/raw?url=" + encodeURIComponent(
+        //    "https://docs.google.com/spreadsheets/d/e/2PACX-1vQrFxPt40nqUM0HS66Q0zsQp6cZbXva4MZKI3pnz71MBcEITesBSPHrz8mWJmeUxrHsHCf1K3fAQfXQ/pub?output=csv"
+        //);
+        
+        let CSV_URL = "https://api.allorigins.win/raw?url=" + encodeURIComponent(localStorage.getItem('csv_url')) || "https://api.allorigins.win/raw?url=" + encodeURIComponent(
+            "https://docs.google.com/spreadsheets/d/e/2PACX-1vQrFxPt40nqUM0HS66Q0zsQp6cZbXva4MZKI3pnz71MBcEITesBSPHrz8mWJmeUxrHsHCf1K3fAQfXQ/pub?output=csv"
+        );
+
+        // Exact metric labels as they appear in your CSV (based on the data points you provided)
+        const DASHBOARD_STRUCTURE = {
+            header: {
+                ticker: "Ticker",
+                companyName: "Company Name",
+                marketCap: "Market Cap",
+                earnings: "Earnings"
+            },
+            growth: [
+                "EPS Growth 1 Year",
+                "Revenue Growth 1 Year",
+                "Free Cash Flow Growth",
+                "EPS Next Year Estimate",
+                "EPS Long-Term 5 Growth Estimate"
+            ],
+            quality: [
+                "Operating Margin",
+                "Net Income Margin",
+                "Shares Outstanding (YoY)",
+                "Return on Equity (ROE)",
+                "Return on Invested Capital (ROIC)",
+                "Insider ownership"
+            ],
+            valuation: [
+                "Earnings Yield (EPS/Price per Share)",
+                "FCF Yield",
+                "EV/EBITDA",
+                "Price/Book Ratio",
+                "Price/Free Cash Flow Ratio",
+                "Price/Sales Ratio"
+            ],
+            momentum: [
+                "1 Year performance",
+                "5 Year performance",
+                "Beta",
+                "RSI"
+            ],
+            income: [
+                "Dividend Yield",
+                "Dividend Growth Rate (Current to Prior Year)",
+                "Dividend Growth Rate (5 Year Average)",
+                "Dividend Payout Ratio"
+            ],
+            balance: [
+                "Debt/Equity Ratio",
+                "Long-Term Debt to Equity",
+                "Debt/FCF"
+            ]
+        };
+
+        // =============================================
+        // CSV PARSER (handles quoted fields safely)
+        // =============================================
+        function parseCSV(csvText) {
+            const lines = csvText.trim().split(/\r?\n/);
+            const valueMap = {};
+
+            lines.forEach(line => {
+                if (!line.trim()) return;
+                const cells = line.split(',');
+                if (cells.length < 2) return;
+
+                const label = cells[0].trim().replace(/^"|"$/g, '');
+                const value = cells.slice(1).join(',').trim().replace(/^"|"$/g, '');
+
+                if (label) {
+                    valueMap[label] = value;
+                }
+            });
+
+            return valueMap;
+        }
+
+        // =============================================
+        // RENDER A SINGLE METRIC ROW
+        // =============================================
+        function renderMetrics(containerId, labels, valueMap) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+
+            labels.forEach(label => {
+                const value = valueMap[label] || '—';
+                const div = document.createElement('div');
+                div.className = 'flex justify-between items-center py-3 border-b border-white/10 last:border-none group';
+
+                // Determine if value is a percentage for coloring
+                let displayValue = value;
+                let valueClass = 'metric-value font-semibold text-xl';
+
+                if (value !== '—' && (value.includes('%') || value.includes('.'))) {
+                    const num = parseFloat(value);
+                    if (!isNaN(num)) {
+                        if (num > 0) valueClass += ' value-positive';
+                        else if (num < 0) valueClass += ' value-negative';
+                    }
+                }
+
+                div.innerHTML = `
+                    <div class="text-zinc-400 group-hover:text-white transition-colors">${label}</div>
+                    <span class="${valueClass}">${displayValue}</span>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // =============================================
+        // MAIN DATA LOADER
+        // =============================================
+        async function loadAndPopulate() {
+            const statusBar = document.getElementById('status-bar');
+            const statusText = document.getElementById('status-text');
+            const statusIcon = document.getElementById('status-icon');
+            const mainContent = document.getElementById('main-content');
+            const errorMsg = document.getElementById('error-message');
+
+            try {
+                statusText.textContent = 'Fetching latest data from Google Spreadsheet...';
+                statusIcon.className = 'fa-solid fa-spinner loader mr-2';
+
+                const response = await fetch(CSV_URL, { 
+                    method: 'GET',
+                    headers: { 'Accept': 'text/csv' }
+                });
+
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+                const csvText = await response.text();
+                const valueMap = parseCSV(csvText);
+
+                // Verify we actually got data
+                if (Object.keys(valueMap).length < 10) {
+                    throw new Error('CSV appears empty or malformed');
+                }
+
+                // Populate header
+                document.getElementById('ticker').textContent = valueMap[DASHBOARD_STRUCTURE.header.ticker] || 'TSLA';
+                document.getElementById('company-name').textContent = valueMap[DASHBOARD_STRUCTURE.header.companyName] || 'Tesla Inc.';
+                document.getElementById('market-cap').innerHTML = `Market Cap • <span class="font-semibold">${valueMap[DASHBOARD_STRUCTURE.header.marketCap] || '—'}</span>`;
+                document.getElementById('earnings-date').textContent = valueMap[DASHBOARD_STRUCTURE.header.earnings] || '—';
+
+                // Quick stats
+                document.getElementById('eps-yield').innerHTML = `<span class="value-positive">${valueMap["Earnings Yield (EPS/Price per Share)"] || '—'}</span>`;
+                document.getElementById('fcf-yield').innerHTML = `<span class="value-positive">${valueMap["FCF Yield"] || '—'}</span>`;
+                document.getElementById('roe').textContent = valueMap["Return on Equity (ROE)"] || '—';
+                document.getElementById('beta').textContent = valueMap["Beta"] || '—';
+
+                // Render all sections using the exact labels from your CSV
+                renderMetrics('growth-metrics', DASHBOARD_STRUCTURE.growth, valueMap);
+                renderMetrics('quality-metrics', DASHBOARD_STRUCTURE.quality, valueMap);
+                renderMetrics('valuation-metrics', DASHBOARD_STRUCTURE.valuation, valueMap);
+                renderMetrics('momentum-metrics', DASHBOARD_STRUCTURE.momentum, valueMap);
+                renderMetrics('income-metrics', DASHBOARD_STRUCTURE.income, valueMap);
+                renderMetrics('balance-metrics', DASHBOARD_STRUCTURE.balance, valueMap);
+
+                // Show success
+                statusText.innerHTML = `✅ Data successfully loaded from Google Spreadsheet • ${new Date().toLocaleString()}`;
+                statusIcon.className = 'fa-solid fa-circle-check mr-2';
+                statusBar.classList.remove('bg-emerald-400/10', 'text-emerald-400', 'border-emerald-400/20');
+                statusBar.classList.add('bg-emerald-400/10', 'text-emerald-400', 'border-emerald-400/20');
+
+                mainContent.classList.remove('hidden');
+                errorMsg.classList.add('hidden');
+
+                console.log('%c✅ Dashboard loaded from live CSV', 'color:#00ff9f; font-family:monospace');
+                console.table(valueMap);
+
+            } catch (err) {
+                console.error(err);
+                statusBar.classList.add('hidden');
+                mainContent.classList.add('hidden');
+                errorMsg.classList.remove('hidden');
+                document.getElementById('error-detail').textContent = err.message;
+            }
+        }
+
+        // =============================================
+        // REFRESH BUTTON
+        // =============================================
+        async function refreshDashboard() {
+            const btns = document.querySelectorAll('button');
+            btns.forEach(b => { if (b.onclick) b.disabled = true; });
+
+            document.getElementById('main-content').classList.add('hidden');
+            document.getElementById('status-bar').classList.remove('hidden');
+            document.getElementById('error-message').classList.add('hidden');
+
+            await loadAndPopulate();
+
+            btns.forEach(b => { if (b.onclick) b.disabled = false; });
+        }
+
+        // =============================================
+        // COPY ENTIRE HTML TO CLIPBOARD
+        // =============================================
+        function copyHTML() {
+            const htmlContent = document.documentElement.outerHTML;
+            navigator.clipboard.writeText(htmlContent).then(() => {
+                const btn = event.currentTarget;
+                const original = btn.innerHTML;
+                btn.innerHTML = `<i class="fa-solid fa-check"></i> Copied!`;
+                setTimeout(() => btn.innerHTML = original, 2000);
+            });
+        }
+
+        // =============================================
+        // INITIALIZE ON PAGE LOAD
+        // =============================================
+        window.onload = loadAndPopulate;
+    </script>
+</body>
+</html>
