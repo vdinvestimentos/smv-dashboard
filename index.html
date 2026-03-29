@@ -226,14 +226,14 @@
         // =============================================
         // CONFIGURATION - CSV URL & Dashboard Structure
         // =============================================
-        //const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQrFxPt40nqUM0HS66Q0zsQp6cZbXva4MZKI3pnz71MBcEITesBSPHrz8mWJmeUxrHsHCf1K3fAQfXQ/pub?output=csv";
+        const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQrFxPt40nqUM0HS66Q0zsQp6cZbXva4MZKI3pnz71MBcEITesBSPHrz8mWJmeUxrHsHCf1K3fAQfXQ/pub?output=csv";
         //const CSV_URL = "https://api.allorigins.win/raw?url=" + encodeURIComponent(
         //    "https://docs.google.com/spreadsheets/d/e/2PACX-1vQrFxPt40nqUM0HS66Q0zsQp6cZbXva4MZKI3pnz71MBcEITesBSPHrz8mWJmeUxrHsHCf1K3fAQfXQ/pub?output=csv"
         //);
         
-        let CSV_URL = "https://api.allorigins.win/raw?url=" + encodeURIComponent(localStorage.getItem('csv_url')) || "https://api.allorigins.win/raw?url=" + encodeURIComponent(
-            "https://docs.google.com/spreadsheets/d/e/2PACX-1vQrFxPt40nqUM0HS66Q0zsQp6cZbXva4MZKI3pnz71MBcEITesBSPHrz8mWJmeUxrHsHCf1K3fAQfXQ/pub?output=csv"
-        );
+        //let CSV_URL = "https://api.allorigins.win/raw?url=" + encodeURIComponent(localStorage.getItem('csv_url')) || "https://api.allorigins.win/raw?url=" + encodeURIComponent(
+        //    "https://docs.google.com/spreadsheets/d/e/2PACX-1vQrFxPt40nqUM0HS66Q0zsQp6cZbXva4MZKI3pnz71MBcEITesBSPHrz8mWJmeUxrHsHCf1K3fAQfXQ/pub?output=csv"
+        //);
 
         // Exact metric labels as they appear in your CSV (based on the data points you provided)
         const DASHBOARD_STRUCTURE = {
