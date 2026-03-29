@@ -69,7 +69,7 @@
         <div class="max-w-screen-2xl mx-auto px-4 md:px-8 py-5">
             <div class="flex flex-col lg:flex-row lg:items-center gap-6 lg:gap-8">
 
-                <!-- Ticker + Name -->
+                <!-- Ticker + Name + Market Cap -->
                 <div class="flex items-center gap-x-4">
                     <div class="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-emerald-400 to-cyan-400 rounded-2xl text-3xl md:text-4xl font-bold shadow-inner">🚀</div>
                     <div>
@@ -77,17 +77,18 @@
                             <span id="ticker" class="header-font text-4xl md:text-5xl font-semibold tracking-tighter">TSLA</span>
                             <span id="company-name" class="text-lg md:text-2xl text-zinc-400">Loading...</span>
                         </div>
-                        <div class="flex items-center gap-x-2 text-sm text-zinc-500">
-                            <span id="market-cap" class="font-medium">Market Cap • Loading...</span>
-                            <span class="text-emerald-400 text-xs px-2.5 py-0.5 bg-emerald-400/10 rounded-full font-medium flex items-center gap-x-1">
-                                <i class="fa-solid fa-circle-check"></i> LIVE
+                        
+                        <!-- Highlighted Market Cap -->
+                        <div class="mt-1">
+                            <span id="market-cap" class="text-emerald-400 font-semibold text-xl md:text-2xl">
+                                Market Cap • Loading...
                             </span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Earnings & Quick Stats -->
-                <div class="flex flex-wrap items-center gap-x-6 lg:gap-x-8">
+                <!-- Earnings & Remaining Quick Stat -->
+                <div class="flex flex-wrap items-center gap-x-8 lg:gap-x-12">
                     <div class="text-center lg:text-left">
                         <div class="text-xs uppercase tracking-widest text-zinc-500 mb-1">Next Earnings</div>
                         <div id="earnings-date" class="font-semibold text-xl md:text-2xl text-amber-400">Loading...</div>
@@ -95,23 +96,11 @@
 
                     <div class="hidden md:block h-10 w-px bg-white/10"></div>
 
-                    <!-- Key Ratios -->
-                    <div class="hidden md:flex items-center gap-x-6 text-sm">
-                        <div>
-                            <div class="text-zinc-400 text-xs">EPS Yield</div>
-                            <div id="eps-yield" class="font-semibold text-lg">—</div>
-                        </div>
-                        <div>
-                            <div class="text-zinc-400 text-xs">FCF Yield</div>
-                            <div id="fcf-yield" class="font-semibold text-lg">—</div>
-                        </div>
+                    <!-- Only ROE remains -->
+                    <div class="hidden md:flex items-center gap-x-8 text-sm">
                         <div>
                             <div class="text-zinc-400 text-xs">ROE</div>
-                            <div id="roe" class="font-semibold text-lg">—</div>
-                        </div>
-                        <div>
-                            <div class="text-zinc-400 text-xs">Beta</div>
-                            <div id="beta" class="font-semibold text-lg">—</div>
+                            <div id="roe" class="font-semibold text-xl text-white">—</div>
                         </div>
                     </div>
                 </div>
@@ -177,7 +166,6 @@
 
         <!-- MAIN DASHBOARD -->
         <div id="main-content" class="grid grid-cols-1 lg:grid-cols-3 gap-8 hidden">
-            
             <!-- GROWTH -->
             <div class="dashboard-card bg-zinc-900 rounded-3xl p-8 border border-white/5">
                 <div class="section-header flex items-center gap-x-3 mb-6">
@@ -341,16 +329,18 @@
                 // Header
                 document.getElementById('ticker').textContent = valueMap[DASHBOARD_STRUCTURE.header.ticker] || 'TSLA';
                 document.getElementById('company-name').textContent = valueMap[DASHBOARD_STRUCTURE.header.companyName] || 'Company';
-                document.getElementById('market-cap').innerHTML = `Market Cap • <span class="font-semibold">${valueMap[DASHBOARD_STRUCTURE.header.marketCap] || '—'}</span>`;
+                
+                // Highlighted Market Cap
+                document.getElementById('market-cap').innerHTML = `
+                    Market Cap • <span class="font-bold text-2xl md:text-3xl text-emerald-400">${valueMap[DASHBOARD_STRUCTURE.header.marketCap] || '—'}</span>
+                `;
+                
                 document.getElementById('earnings-date').textContent = valueMap[DASHBOARD_STRUCTURE.header.earnings] || '—';
 
-                // Quick stats
-                document.getElementById('eps-yield').innerHTML = `<span class="value-positive">${valueMap["Earnings Yield (EPS/Price per Share)"] || '—'}</span>`;
-                document.getElementById('fcf-yield').innerHTML = `<span class="value-positive">${valueMap["FCF Yield"] || '—'}</span>`;
+                // ROE only
                 document.getElementById('roe').textContent = valueMap["Return on Equity (ROE)"] || '—';
-                document.getElementById('beta').textContent = valueMap["Beta"] || '—';
 
-                // Sections
+                // Render sections
                 renderMetrics('growth-metrics', DASHBOARD_STRUCTURE.growth, valueMap);
                 renderMetrics('quality-metrics', DASHBOARD_STRUCTURE.quality, valueMap);
                 renderMetrics('valuation-metrics', DASHBOARD_STRUCTURE.valuation, valueMap);
@@ -374,7 +364,7 @@
             }
         }
 
-        // ====================== MODAL FUNCTIONS ======================
+        // ====================== MODAL ======================
         function showUrlModal() {
             document.getElementById('csv-url-input').value = CSV_URL;
             document.getElementById('url-modal').classList.remove('hidden');
@@ -394,7 +384,6 @@
             }
         }
 
-        // ====================== OTHER FUNCTIONS ======================
         async function refreshDashboard() {
             document.getElementById('main-content').classList.add('hidden');
             document.getElementById('status-bar').classList.remove('hidden');
@@ -408,7 +397,6 @@
             });
         }
 
-        // ====================== INIT ======================
         window.onload = loadAndPopulate;
     </script>
 </body>
